@@ -1,7 +1,7 @@
 // =================================
 // Author:         Trevor Richardson
 // Date Complete:  5/11/2020
-// Version:        1.1.1
+// Version:        1.1.2
 // =================================
 // Dice Program
 // =================================
@@ -166,13 +166,14 @@ public class Dice extends Application {
         // Initialize stage and make small adjustments
         appStage.setScene(scene);
         appStage.setTitle("Dice");
-        appStage.setWidth(appStage.getWidth() + 50);
         appStage.setResizable(false);
-        numFacesLabel.setPrefWidth(numFacesLabel.getWidth() + 25);
 
         // Close loading window, open application windows
         loadingStage.close();
+
         appStage.show();
+        appStage.setWidth(appStage.getWidth() + 50);
+        numFacesLabel.setPrefWidth(numFacesLabel.getWidth() + 25);
 
     }
 
@@ -210,6 +211,8 @@ public class Dice extends Application {
 
     // Method for showing the history or "Past Values" windows
     public void showHistoryWindow(Stage appStage, ArrayList<Integer> pastVals, Insets paddingField, int verticalGap, int horizontalGap) {
+        Stage loadingStage = showLoadingWindow();
+
         try {
             String data = "";
             String average = "";
@@ -270,6 +273,7 @@ public class Dice extends Application {
             historyStage.setWidth(appStage.getWidth());
             historyStage.setY(appStage.getY());
             historyStage.setX(appStage.getX());
+            loadingStage.close();
             historyStage.show();
 
             // Set cancel button to close window
@@ -294,6 +298,7 @@ public class Dice extends Application {
 
         // catch statement will display an alert when index does not exist (ie. when no values have been saved)
         } catch (IndexOutOfBoundsException e) {
+            loadingStage.close();
             Alert alert = new Alert(Alert.AlertType.ERROR, "No past values to show! Try clicking \"Roll\" first.");
             alert.showAndWait();
 
@@ -302,6 +307,8 @@ public class Dice extends Application {
 
     // Method will export data to selected directory
     public static void showExportWindow(Stage historyStage, Stage appStage, Insets paddingField, int verticalGap, int horizontalGap, String data) {
+        Stage loadingStage = showLoadingWindow();
+
         // Get directory from user
         DirectoryChooser directoryChooser = new DirectoryChooser();
         File selectedDirectory = directoryChooser.showDialog(historyStage);
@@ -334,6 +341,7 @@ public class Dice extends Application {
         exportStage.initOwner(historyStage);
         exportStage.setY(appStage.getY());
         exportStage.setX(appStage.getX());
+        loadingStage.close();
         exportStage.show();
 
         // Set save button to save the data as a .txt to the desired directory
@@ -351,6 +359,8 @@ public class Dice extends Application {
 
     // When the "save" button is clicked, this method will save the file
     public static void saveExport(File selectedDirectory, TextField fileName, Stage exportStage, String data) {
+        Stage loadingStage = showLoadingWindow();
+
         try {
             File tempFile = new File(selectedDirectory.getAbsolutePath() + "\\" + fileName.getText() + ".txt");
 
@@ -363,6 +373,7 @@ public class Dice extends Application {
 
                 // if the cancel button was clicked, close the export stage
                 if (result.get() == ButtonType.CANCEL) {
+                    loadingStage.close();
                     exportStage.close();
 
                 // Else, replace the file, inform the user of the file creation.
@@ -370,9 +381,11 @@ public class Dice extends Application {
                     FileWriter fileWriter = new FileWriter(selectedDirectory.getAbsolutePath() + "\\" + fileName.getText() + ".txt");
                     fileWriter.write(data);
                     fileWriter.close();
+                    loadingStage.close();
                     alert = new Alert(Alert.AlertType.INFORMATION, "The data was successfully exported.");
                     alert.showAndWait();
                     exportStage.close();
+
 
                 }
 
@@ -381,6 +394,7 @@ public class Dice extends Application {
                 FileWriter fileWriter = new FileWriter(selectedDirectory.getAbsolutePath() + "\\" + fileName.getText() + ".txt");
                 fileWriter.write(data);
                 fileWriter.close();
+                loadingStage.close();
                 Alert alert = new Alert(Alert.AlertType.INFORMATION, "The data was successfully exported.");
                 alert.showAndWait();
                 exportStage.close();
@@ -389,6 +403,7 @@ public class Dice extends Application {
 
         // if there was an OI error (ie. access denied), inform the user and abort
         } catch (IOException e) {
+            loadingStage.close();
             Alert alert = new Alert(Alert.AlertType.ERROR, "There has been a directory error! Data was not successfully exported.");
             e.printStackTrace();
             alert.showAndWait();
