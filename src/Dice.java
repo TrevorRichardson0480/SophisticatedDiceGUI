@@ -1,4 +1,5 @@
 import javafx.application.Application;
+import javafx.geometry.Pos;
 import javafx.scene.Scene;
 import javafx.scene.control.*;
 import javafx.stage.DirectoryChooser;
@@ -124,7 +125,7 @@ public class Dice extends Application {
 
         //
         optionsButton.setOnAction(event -> {
-            expandOptions(appStage, gridPane, sidesSlider, optionsButton, numFacesLabel);
+            expandOptions(appStage, gridPane, paddingField, verticalGap, horizontalGap, sidesSlider, optionsButton, numFacesLabel);
 
         });
 
@@ -361,7 +362,7 @@ public class Dice extends Application {
 
     }
 
-    public void expandOptions(Stage appStage, GridPane gridPane, Slider sidesSlider, Button optionsButton, Label numFacesLabel) {
+    public void expandOptions(Stage appStage, GridPane gridPane, Insets paddingField, int verticalGap, int horizontalGap, Slider sidesSlider, Button optionsButton, Label numFacesLabel) {
         Label minLabel = new Label("Minimum Value:");
         Label maxLabel = new Label("Maximum Value:");
 
@@ -371,10 +372,12 @@ public class Dice extends Application {
         CheckBox ignoreOddCheck = new CheckBox("Ignore Odd Numbers");
         CheckBox ignoreEvenCheck = new CheckBox("Ignore Even Numbers");
 
+        Button aboutButton = new Button("About");
         Button cancelOptionsButton = new Button("Cancel");
 
         gridPane.add(minLabel, 0, 5);
         gridPane.add(maxLabel, 0, 6);
+        gridPane.add(aboutButton, 0, 7);
         gridPane.add(minValField, 1, 5);
         gridPane.add(maxValField, 1, 6);
         gridPane.add(ignoreOddCheck, 2, 5);
@@ -421,6 +424,11 @@ public class Dice extends Application {
                 ignoreOdd = false;
 
             }
+        });
+
+        aboutButton.setOnAction(e -> {
+            showAboutWindow(paddingField, verticalGap, horizontalGap);
+
         });
 
         cancelOptionsButton.setOnAction(e -> {
@@ -470,6 +478,43 @@ public class Dice extends Application {
             return true;
 
         }
+    }
+
+    public void showAboutWindow(Insets paddingField, int verticalGap, int horizontalGap) {
+        GridPane aboutPane = new GridPane();
+
+        Label titleLabel = new Label("Sophisticated Dice Thing");
+        Label versionNumAndDateLabel = new Label("v1.1.1 - 5/11/2020");
+        Label copyRightLabel = new Label("Copyright 2020, Trevor Richardson, All rights reserved.");
+        titleLabel.setMaxWidth(Double.MAX_VALUE);
+        versionNumAndDateLabel.setMaxWidth(Double.MAX_VALUE);
+        copyRightLabel.setMaxWidth(Double.MAX_VALUE);
+        titleLabel.setAlignment(Pos.CENTER);
+        versionNumAndDateLabel.setAlignment(Pos.CENTER);
+        copyRightLabel.setAlignment(Pos.CENTER);
+
+        Button closeButton = new Button("Okay");
+        closeButton.setAlignment(Pos.BASELINE_RIGHT);
+
+        aboutPane.setPadding(paddingField);
+        aboutPane.setHgap(verticalGap);
+        aboutPane.setVgap(horizontalGap);
+        aboutPane.add(titleLabel, 0, 0);
+        aboutPane.add(versionNumAndDateLabel, 0 ,1);
+        aboutPane.add(copyRightLabel, 0, 2);
+        aboutPane.add(closeButton, 0, 3);
+
+        Scene aboutScene = new Scene(aboutPane);
+        Stage aboutStage = new Stage();
+        aboutStage.setScene(aboutScene);
+        aboutStage.setResizable(false);
+        aboutStage.show();
+
+        closeButton.setOnAction(event -> {
+            aboutStage.close();
+
+        });
+
     }
 
     public void calculate(TextField currValField, TextField lowestValField, TextField highestValField, ArrayList<Integer> pastVals) {
