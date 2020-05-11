@@ -1,3 +1,11 @@
+// =================================
+// Author:         Trevor Richardson
+// Date Complete:  5/11/2020
+// Version:        1.1.1
+// =================================
+// Dice Program
+// =================================
+
 import javafx.application.Application;
 import javafx.geometry.Pos;
 import javafx.scene.Scene;
@@ -12,8 +20,27 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.InputMismatchException;
 import java.util.Optional;
-
 import javafx.stage.Modality;
+
+/* The Dice class will:
+ * ------------------------
+ * - Extend and make use of the JavaFX Application class
+ * - Use JavaFX to create an application that will provide the user with a die roller
+ *
+ * Methods:
+ * ------------------------
+ * - start: loads primary stage
+ * - showLoadingWindow: displays a loading screen while the program loads a section of code. Returns a Stage to be closed later.
+ * - showHistoryWindow: loads the history windows to display past values with options.
+ * - showExportWindow: if the export button is clicked within the history stage, showExportWindow will prompt the user to choose a directory and file name.
+ * - saveExport: showExportWindow will call the saveExport method to save the file to the selected directory.
+ * - clearHistory: will clear the pastVals array and subsequently empty the history window's text area.
+ * - expandOptions: extends the primary window to display additional options, and greys out old options
+ * - setValueField: when custom values are used, this sets values to be used in calculations later, returns true if there was an error (a non numerical value was inputted).
+ * - showAboutWindow: displays a small window with program info.
+ * - newVal: generates a new random number with given constraints (range, ignore even, ignore odd).
+ * - main: launches the application.
+ */
 
 public class Dice extends Application {
     int numFaces = 6;
@@ -25,7 +52,7 @@ public class Dice extends Application {
     boolean valueMinError = false;
     boolean valueMaxError = false;
 
-
+    // Start the application
     public void start(Stage appStage) {
         // Show a loading windows to indicate that the program is running. In most cases, the loading window will not be seen.
         Stage loadingStage = showLoadingWindow();
@@ -123,35 +150,39 @@ public class Dice extends Application {
 
         });
 
-        //
+        // Open additional options when "Custom Options" button is clicked
         optionsButton.setOnAction(event -> {
             expandOptions(appStage, gridPane, paddingField, verticalGap, horizontalGap, sidesSlider, optionsButton, numFacesLabel);
 
         });
 
+        // Updates settings when the slider is changed
         sidesSlider.valueProperty().addListener(e -> {
             numFaces = (int) sidesSlider.getValue();
             numFacesLabel.setText("Number of Faces: " + numFaces);
 
         });
 
+        // Initialize stage and make small adjustments
         appStage.setScene(scene);
         appStage.setTitle("Dice");
-        appStage.show();
-
-        loadingStage.close();
-
         appStage.setWidth(appStage.getWidth() + 50);
         appStage.setResizable(false);
         numFacesLabel.setPrefWidth(numFacesLabel.getWidth() + 25);
 
+        // Close loading window, open application windows
+        loadingStage.close();
+        appStage.show();
+
     }
 
+    // Method for displaying loading window
     public static Stage showLoadingWindow() {
         int gridPadding = 10;
         int verticalGap = 10;
         int horizontalGap = 10;
 
+        // Initialize grid pane, loading indicator, label
         GridPane gridPane = new GridPane();
 
         ProgressIndicator loadingIndicator = new ProgressIndicator(-1.0);
@@ -166,6 +197,7 @@ public class Dice extends Application {
         gridPane.add(loadingIndicator, 0, 0);
         gridPane.add(loadingLabel, 1, 0);
 
+        // Show loading Stage
         Scene scene = new Scene(gridPane);
         Stage loadingStage = new Stage();
         loadingStage.setScene(scene);
@@ -176,6 +208,7 @@ public class Dice extends Application {
 
     }
 
+    // Method for showing the history or "Past Values" windows
     public void showHistoryWindow(Stage appStage, ArrayList<Integer> pastVals, Insets paddingField, int verticalGap, int horizontalGap) {
         try {
             String data = "";
@@ -184,6 +217,7 @@ public class Dice extends Application {
             int lowestVal = pastVals.get(0);
             int sum = 0;
 
+            // Get a string of data
             data += "Roll #\n";
             data += "\n";
 
@@ -210,6 +244,7 @@ public class Dice extends Application {
             average += (((double) sum) / ((double) pastVals.size()) + "000").substring(0, 5);
             data += "Average: " + average + "\n";
 
+            // Initialize text Area, buttons, grid pane, scene, stage, and show window
             TextArea historyField = new TextArea(data);
             historyField.setEditable(false);
             Button cancelButton = new Button("Okay");
@@ -237,6 +272,7 @@ public class Dice extends Application {
             historyStage.setX(appStage.getX());
             historyStage.show();
 
+            // Set cancel button to close window
             cancelButton.setOnAction(event1 -> {
                 historyStage.close();
 
@@ -244,29 +280,33 @@ public class Dice extends Application {
 
             String finalData = data;
 
+            // Set export button to open export window
             exportButton.setOnAction(event1 -> {
                 showExportWindow(historyStage, appStage, paddingField, verticalGap, horizontalGap, finalData);
 
             });
 
-
+            // Set clear history button to clear the pastVals array
             clearButton.setOnAction(event1 -> {
                 clearHistory(pastVals, historyStage);
 
             });
 
+        // catch statement will display an alert when index does not exist (ie. when no values have been saved)
         } catch (IndexOutOfBoundsException e) {
             Alert alert = new Alert(Alert.AlertType.ERROR, "No past values to show! Try clicking \"Roll\" first.");
             alert.showAndWait();
 
         }
-
     }
 
+    // Method will export data to selected directory
     public static void showExportWindow(Stage historyStage, Stage appStage, Insets paddingField, int verticalGap, int horizontalGap, String data) {
+        // Get directory from user
         DirectoryChooser directoryChooser = new DirectoryChooser();
         File selectedDirectory = directoryChooser.showDialog(historyStage);
 
+        // Initialize labels, text field, buttons, grid pane, scene, and stage
         Label directoryLabel = new Label("Directory:  " + selectedDirectory.getAbsolutePath());
         Label fileNameLabel = new Label("File Name:");
         Label fileExtensionLabel = new Label(".txt");
@@ -296,30 +336,36 @@ public class Dice extends Application {
         exportStage.setX(appStage.getX());
         exportStage.show();
 
+        // Set save button to save the data as a .txt to the desired directory
         saveButton.setOnAction(event2 -> {
             saveExport(selectedDirectory, fileName, exportStage, data);
 
         });
 
+        // Cancel button will close the export stage
         cancelButtonExport.setOnAction(event2 -> {
             exportStage.close();
 
         });
-
     }
 
+    // When the "save" button is clicked, this method will save the file
     public static void saveExport(File selectedDirectory, TextField fileName, Stage exportStage, String data) {
         try {
             File tempFile = new File(selectedDirectory.getAbsolutePath() + "\\" + fileName.getText() + ".txt");
 
+            // Use the temp file to see if the file name already exists at the desired directory
             if (tempFile.exists()) {
+                // if the file already exists, display an alert to inform the user
                 Alert alert = new Alert(Alert.AlertType.CONFIRMATION, "This file already exists! Do you wish to overwrite?");
                 alert.setHeaderText("WARNING");
                 Optional<ButtonType> result = alert.showAndWait();
 
+                // if the cancel button was clicked, close the export stage
                 if (result.get() == ButtonType.CANCEL) {
                     exportStage.close();
 
+                // Else, replace the file, inform the user of the file creation.
                 } else {
                     FileWriter fileWriter = new FileWriter(selectedDirectory.getAbsolutePath() + "\\" + fileName.getText() + ".txt");
                     fileWriter.write(data);
@@ -330,6 +376,7 @@ public class Dice extends Application {
 
                 }
 
+            // if the file does not exist, create the file, inform the user of the file creation.
             } else {
                 FileWriter fileWriter = new FileWriter(selectedDirectory.getAbsolutePath() + "\\" + fileName.getText() + ".txt");
                 fileWriter.write(data);
@@ -340,6 +387,7 @@ public class Dice extends Application {
 
             }
 
+        // if there was an OI error (ie. access denied), inform the user and abort
         } catch (IOException e) {
             Alert alert = new Alert(Alert.AlertType.ERROR, "There has been a directory error! Data was not successfully exported.");
             e.printStackTrace();
@@ -348,6 +396,7 @@ public class Dice extends Application {
         }
     }
 
+    // Method will clear the pastVals, ask the user for confirmation, and inform the user that the data has been cleared
     public void clearHistory(ArrayList<Integer> pastVals, Stage historyStage) {
         Alert alert = new Alert(Alert.AlertType.CONFIRMATION, "Erase all data?");
         Optional<ButtonType> result = alert.showAndWait();
@@ -358,16 +407,18 @@ public class Dice extends Application {
             alert.setHeaderText("Got it");
             alert.showAndWait();
             historyStage.close();
-        }
 
+        }
     }
 
+    // Method will expand the main window to show additional options
     public void expandOptions(Stage appStage, GridPane gridPane, Insets paddingField, int verticalGap, int horizontalGap, Slider sidesSlider, Button optionsButton, Label numFacesLabel) {
+        // Initialize labels, textfield, check boxes, buttons, grid pane
         Label minLabel = new Label("Minimum Value:");
         Label maxLabel = new Label("Maximum Value:");
 
         TextField minValField = new TextField("1");
-        TextField maxValField = new TextField(Integer.toString((int) sidesSlider.getValue()));
+        TextField maxValField = new TextField(Integer.toString((int) sidesSlider.getValue())); // This field is set to the slider's value
 
         CheckBox ignoreOddCheck = new CheckBox("Ignore Odd Numbers");
         CheckBox ignoreEvenCheck = new CheckBox("Ignore Even Numbers");
@@ -384,24 +435,30 @@ public class Dice extends Application {
         gridPane.add(ignoreEvenCheck, 2, 6);
         gridPane.add(cancelOptionsButton, 2, 7);
 
+        // disable old options
         sidesSlider.setDisable(true);
         optionsButton.setDisable(true);
 
+        // Initialize stage
         appStage.setHeight(appStage.getHeight() * 1.5);
 
+        // Initialize to detect errors and set difference, these should return false most of the time
         valueMinError = setValueField(minValField, maxValField, numFacesLabel);
         valueMaxError = setValueField(minValField, maxValField, numFacesLabel);
 
+        // If the minValField was changed, detect errors and set the difference
         minValField.textProperty().addListener(e -> {
             valueMinError = setValueField(minValField, maxValField, numFacesLabel);
 
         });
 
+        // If the maxValField was changed, detect errors and set the difference
         maxValField.textProperty().addListener(e -> {
             valueMaxError = setValueField(minValField, maxValField, numFacesLabel);
 
         });
 
+        // if the ignoreEvenCheck was checked, set ignore even equal to true and disable ignore odd
         ignoreEvenCheck.selectedProperty().addListener(e -> {
             if (ignoreEvenCheck.isSelected()) {
                 ignoreOddCheck.setDisable(true);
@@ -414,6 +471,7 @@ public class Dice extends Application {
             }
         });
 
+        // Likewise for ignoreOddCheck
         ignoreOddCheck.selectedProperty().addListener(e -> {
             if (ignoreOddCheck.isSelected()) {
                 ignoreEvenCheck.setDisable(true);
@@ -426,11 +484,13 @@ public class Dice extends Application {
             }
         });
 
+        // if the about button was clicked, display the about window
         aboutButton.setOnAction(e -> {
             showAboutWindow(paddingField, verticalGap, horizontalGap);
 
         });
 
+        // set cancel button to remove the extra options, enable old options, reshape window, reset slider
         cancelOptionsButton.setOnAction(e -> {
             gridPane.getChildren().remove(minLabel);
             gridPane.getChildren().remove(maxLabel);
@@ -455,24 +515,28 @@ public class Dice extends Application {
         });
     }
 
+    // Method will set value field ("Number of Faces: ...")
     public boolean setValueField(TextField minValField, TextField maxValField, Label numFacesLabel) {
         int difference;
         int max;
         int min;
 
         try {
+            // find the difference to determine the number of faces on the die
             max = Integer.parseInt(maxValField.getText());
             min = Integer.parseInt(minValField.getText());
             difference = Math.abs(max - min) + 1;
 
             numFacesLabel.setText("Number of Faces: " + difference);
 
+            // update values
             numFaces = difference;
             startingVal = min;
             maxInRange = max;
 
             return false;
 
+        // if the user entered a non numerical string (NumberFormatException) return true to indicate an error has occurred
         } catch (NumberFormatException exception) {
             numFacesLabel.setText("Number of Faces: ?");
             return true;
@@ -480,9 +544,9 @@ public class Dice extends Application {
         }
     }
 
+    // Method will display the about window
     public void showAboutWindow(Insets paddingField, int verticalGap, int horizontalGap) {
-        GridPane aboutPane = new GridPane();
-
+        // Initialize labels, button, grid pane, scene, and stage
         Label titleLabel = new Label("Sophisticated Dice Thing");
         Label versionNumAndDateLabel = new Label("v1.1.1 - 5/11/2020");
         Label copyRightLabel = new Label("Copyright 2020, Trevor Richardson, All rights reserved.");
@@ -496,6 +560,7 @@ public class Dice extends Application {
         Button closeButton = new Button("Okay");
         closeButton.setAlignment(Pos.BASELINE_RIGHT);
 
+        GridPane aboutPane = new GridPane();
         aboutPane.setPadding(paddingField);
         aboutPane.setHgap(verticalGap);
         aboutPane.setVgap(horizontalGap);
@@ -505,11 +570,13 @@ public class Dice extends Application {
         aboutPane.add(closeButton, 0, 3);
 
         Scene aboutScene = new Scene(aboutPane);
+
         Stage aboutStage = new Stage();
         aboutStage.setScene(aboutScene);
         aboutStage.setResizable(false);
         aboutStage.show();
 
+        // Close button will close the stage
         closeButton.setOnAction(event -> {
             aboutStage.close();
 
@@ -517,32 +584,38 @@ public class Dice extends Application {
 
     }
 
+    // calculate will create a new random number given the constraints
     public void calculate(TextField currValField, TextField lowestValField, TextField highestValField, ArrayList<Integer> pastVals) {
         int lowestVal;
         int highestVal;
         int newVal = newVal();
 
         try {
+            // Min value cannot be larger than max value
             if (startingVal > maxInRange) {
                 throw new InputMismatchException("Min value is greater than max value!");
 
             }
 
+            // if an error was detected earlier
             if (valueMaxError || valueMinError) {
                 throw new NumberFormatException();
             }
 
+            // This prevents a null pointer exception, creates data for the first iteration
             if (firstIteration) {
                 lowestVal = newVal;
                 highestVal = newVal;
                 firstIteration = false;
 
+            // Otherwise, use present data
             } else {
                 lowestVal = Integer.parseInt(lowestValField.getText());
                 highestVal = Integer.parseInt(highestValField.getText());
 
             }
 
+            // if need be, update the highest value or lowest value variables
             if (newVal >= highestVal) {
                 highestValField.setText(String.valueOf(newVal));
 
@@ -553,9 +626,11 @@ public class Dice extends Application {
 
             }
 
+            // Update the current value and add to the history
             currValField.setText(String.valueOf(newVal));
             pastVals.add(newVal);
 
+        // Two possible errors. If the min value is greater than the max value, ask the user to fix the issue. Otherwise ask user to check custom values.
         } catch (Exception e) {
             if (startingVal > maxInRange) {
                 Alert alert = new Alert(Alert.AlertType.ERROR, "Custom min value is greater than max value!");
@@ -569,9 +644,11 @@ public class Dice extends Application {
         }
     }
 
+    // method will generate a random number with given constraints
     public int newVal() {
         int result = 0;
 
+        // adjust the values based on their signs for proper math
         if (startingVal < 0 && maxInRange > 0) {
             startingVal--;
             numFaces++;
@@ -581,6 +658,7 @@ public class Dice extends Application {
 
         }
 
+        // if statement will determine if the ignore even or ignore odd switches are checked and get a result
         if (!ignoreEven && !ignoreOdd) {
             result = (int) (startingVal + (Math.random() * (numFaces)));
 
@@ -597,6 +675,7 @@ public class Dice extends Application {
             } while (result % 2 == 0);
         }
 
+        // restore the values based on their signs
         if (startingVal < 0 && maxInRange > 0) {
             startingVal++;
             numFaces--;
@@ -609,6 +688,7 @@ public class Dice extends Application {
         return result;
     }
 
+    // Launch app
     public static void main(String args[]) {
         launch(args);
 
