@@ -1,7 +1,7 @@
 // =================================
 // Author:         Trevor Richardson
 // Date Complete:  5/11/2020
-// Version:        1.1.2
+// Version:        1.2.4
 // =================================
 // Dice Program
 // =================================
@@ -10,6 +10,7 @@ import javafx.application.Application;
 import javafx.geometry.Pos;
 import javafx.scene.Scene;
 import javafx.scene.control.*;
+import javafx.scene.image.Image;
 import javafx.stage.DirectoryChooser;
 import javafx.stage.Stage;
 import javafx.geometry.Insets;
@@ -43,29 +44,33 @@ import javafx.stage.Modality;
  */
 
 public class Dice extends Application {
+    // Set layout and initial states
+    int textFieldWidth = 15;
+    int gridPadding = 10;
+    int verticalGap = 10;
+    int horizontalGap = 10;
+    int sliderMin = 1;
+    int sliderMax = 20;
+    int sliderInit = 6;
+    int sliderMinorTickCount = sliderMax - 1;
     int numFaces = 6;
     int startingVal = 1;
     int maxInRange = 6;
+    int numOfDice = 1;
+    int diceSliderMax = 100;
+    int diceSliderMinorTickCount = diceSliderMax - 1;
+    boolean clearPerRoll = false;
     boolean firstIteration = true;
     boolean ignoreEven = false;
     boolean ignoreOdd = false;
     boolean valueMinError = false;
     boolean valueMaxError = false;
+    boolean calculationError = false;
 
     // Start the application
     public void start(Stage appStage) {
         // Show a loading windows to indicate that the program is running. In most cases, the loading window will not be seen.
         Stage loadingStage = showLoadingWindow();
-
-        // Set layout and initial states
-        int textFieldWidth = 15;
-        int gridPadding = 10;
-        int verticalGap = 10;
-        int horizontalGap = 10;
-        int sliderMin = 1;
-        int sliderMax = 20;
-        int sliderInit = 6;
-        int sliderMinorTickCount = sliderMax - 1;
 
         // Array list will be used to store history
         ArrayList<Integer> pastVals = new ArrayList<>();
@@ -130,8 +135,33 @@ public class Dice extends Application {
 
         // Get new random number when "Roll" button is clicked
         calcButton.setOnAction(event -> {
-            calculate(currValField, lowestValField, highestValField, pastVals);
+            // if there are multiple die, show loading window and go straight to history window
+            if (numOfDice > 1) {
+                loadingStage.show();
 
+            }
+
+            // if clear per roll is checked, clear the past vals before calculation
+            if (clearPerRoll) {
+                clearHistory(pastVals);
+
+            }
+
+            for (int i = 0; i < numOfDice; i++) {
+                calculate(currValField, lowestValField, highestValField, pastVals);
+
+                if (calculationError){
+                    calculationError = false;
+                    break;
+
+                }
+            }
+
+            if (numOfDice > 1) {
+                showHistoryWindow(appStage, pastVals, paddingField);
+                loadingStage.close();
+
+            }
         });
 
         // Clear text fields when "Reset" button is clicked
@@ -146,13 +176,13 @@ public class Dice extends Application {
 
         // Open history window when "Past Results" button is clicked
         historyButton.setOnAction(event -> {
-            showHistoryWindow(appStage, pastVals, paddingField, verticalGap, horizontalGap);
+            showHistoryWindow(appStage, pastVals, paddingField);
 
         });
 
         // Open additional options when "Custom Options" button is clicked
         optionsButton.setOnAction(event -> {
-            expandOptions(appStage, gridPane, paddingField, verticalGap, horizontalGap, sidesSlider, optionsButton, numFacesLabel);
+            expandOptions(appStage, gridPane, paddingField, sidesSlider, optionsButton, numFacesLabel);
 
         });
 
@@ -166,6 +196,7 @@ public class Dice extends Application {
         // Initialize stage and make small adjustments
         appStage.setScene(scene);
         appStage.setTitle("Dice");
+        appStage.getIcons().add(image);
         appStage.setResizable(false);
 
         // Close loading window, open application windows
@@ -178,10 +209,7 @@ public class Dice extends Application {
     }
 
     // Method for displaying loading window
-    public static Stage showLoadingWindow() {
-        int gridPadding = 10;
-        int verticalGap = 10;
-        int horizontalGap = 10;
+    public Stage showLoadingWindow() {
 
         // Initialize grid pane, loading indicator, label
         GridPane gridPane = new GridPane();
@@ -210,7 +238,7 @@ public class Dice extends Application {
     }
 
     // Method for showing the history or "Past Values" windows
-    public void showHistoryWindow(Stage appStage, ArrayList<Integer> pastVals, Insets paddingField, int verticalGap, int horizontalGap) {
+    public void showHistoryWindow(Stage appStage, ArrayList<Integer> pastVals, Insets paddingField) {
         Stage loadingStage = showLoadingWindow();
 
         try {
@@ -286,13 +314,14 @@ public class Dice extends Application {
 
             // Set export button to open export window
             exportButton.setOnAction(event1 -> {
-                showExportWindow(historyStage, appStage, paddingField, verticalGap, horizontalGap, finalData);
+                showExportWindow(historyStage, appStage, paddingField, finalData);
 
             });
 
             // Set clear history button to clear the pastVals array
             clearButton.setOnAction(event1 -> {
-                clearHistory(pastVals, historyStage);
+                clearHistory(pastVals);
+                historyStage.close();
 
             });
 
@@ -306,59 +335,65 @@ public class Dice extends Application {
     }
 
     // Method will export data to selected directory
-    public static void showExportWindow(Stage historyStage, Stage appStage, Insets paddingField, int verticalGap, int horizontalGap, String data) {
+    public void showExportWindow(Stage historyStage, Stage appStage, Insets paddingField, String data) {
         Stage loadingStage = showLoadingWindow();
 
-        // Get directory from user
-        DirectoryChooser directoryChooser = new DirectoryChooser();
-        File selectedDirectory = directoryChooser.showDialog(historyStage);
+        try {
+            // Get directory from user
+            DirectoryChooser directoryChooser = new DirectoryChooser();
+            File selectedDirectory = directoryChooser.showDialog(historyStage);
 
-        // Initialize labels, text field, buttons, grid pane, scene, and stage
-        Label directoryLabel = new Label("Directory:  " + selectedDirectory.getAbsolutePath());
-        Label fileNameLabel = new Label("File Name:");
-        Label fileExtensionLabel = new Label(".txt");
-        TextField fileName = new TextField("DiceRollData");
-        Button saveButton = new Button("Save");
-        Button cancelButtonExport = new Button("Close");
+            // Initialize labels, text field, buttons, grid pane, scene, and stage
+            Label directoryLabel = new Label("Directory:  " + selectedDirectory.getAbsolutePath());
+            Label fileNameLabel = new Label("File Name:");
+            Label fileExtensionLabel = new Label(".txt");
+            TextField fileName = new TextField("DiceRollData");
+            Button saveButton = new Button("Save");
+            Button cancelButtonExport = new Button("Close");
 
-        GridPane exportPane = new GridPane();
-        exportPane.setPadding(paddingField);
-        exportPane.setHgap(verticalGap);
-        exportPane.setVgap(horizontalGap);
-        exportPane.add(directoryLabel, 0, 0, 3, 1);
-        exportPane.add(fileNameLabel, 0, 1);
-        exportPane.add(fileName, 1, 1);
-        exportPane.add(fileExtensionLabel, 2, 1);
-        exportPane.add(saveButton, 0, 2);
-        exportPane.add(cancelButtonExport, 1, 2);
+            GridPane exportPane = new GridPane();
+            exportPane.setPadding(paddingField);
+            exportPane.setHgap(verticalGap);
+            exportPane.setVgap(horizontalGap);
+            exportPane.add(directoryLabel, 0, 0, 3, 1);
+            exportPane.add(fileNameLabel, 0, 1);
+            exportPane.add(fileName, 1, 1);
+            exportPane.add(fileExtensionLabel, 2, 1);
+            exportPane.add(saveButton, 0, 2);
+            exportPane.add(cancelButtonExport, 1, 2);
 
-        Scene exportScene = new Scene(exportPane);
+            Scene exportScene = new Scene(exportPane);
 
-        Stage exportStage = new Stage();
-        exportStage.setScene(exportScene);
-        exportStage.setTitle("Export");
-        exportStage.initModality(Modality.WINDOW_MODAL);
-        exportStage.initOwner(historyStage);
-        exportStage.setY(appStage.getY());
-        exportStage.setX(appStage.getX());
-        loadingStage.close();
-        exportStage.show();
+            Stage exportStage = new Stage();
+            exportStage.setScene(exportScene);
+            exportStage.setTitle("Export");
+            exportStage.initModality(Modality.WINDOW_MODAL);
+            exportStage.initOwner(historyStage);
+            exportStage.setY(appStage.getY());
+            exportStage.setX(appStage.getX());
+            loadingStage.close();
+            exportStage.show();
 
-        // Set save button to save the data as a .txt to the desired directory
-        saveButton.setOnAction(event2 -> {
-            saveExport(selectedDirectory, fileName, exportStage, data);
+            // Set save button to save the data as a .txt to the desired directory
+            saveButton.setOnAction(event2 -> {
+                saveExport(selectedDirectory, fileName, exportStage, data);
 
-        });
+            });
 
-        // Cancel button will close the export stage
-        cancelButtonExport.setOnAction(event2 -> {
-            exportStage.close();
+            // Cancel button will close the export stage
+            cancelButtonExport.setOnAction(event2 -> {
+                exportStage.close();
 
-        });
+            });
+
+        } catch (Exception e) {
+            loadingStage.close();
+
+        }
     }
 
     // When the "save" button is clicked, this method will save the file
-    public static void saveExport(File selectedDirectory, TextField fileName, Stage exportStage, String data) {
+    public void saveExport(File selectedDirectory, TextField fileName, Stage exportStage, String data) {
         Stage loadingStage = showLoadingWindow();
 
         try {
@@ -412,50 +447,77 @@ public class Dice extends Application {
     }
 
     // Method will clear the pastVals, ask the user for confirmation, and inform the user that the data has been cleared
-    public void clearHistory(ArrayList<Integer> pastVals, Stage historyStage) {
-        Alert alert = new Alert(Alert.AlertType.CONFIRMATION, "Erase all data?");
-        Optional<ButtonType> result = alert.showAndWait();
+    public void clearHistory(ArrayList<Integer> pastVals) {
+        // if clear per roll checkbox is selected, do not display dialogue boxes
+        if (!clearPerRoll) {
+            Alert alert = new Alert(Alert.AlertType.CONFIRMATION, "Erase all data?");
+            Optional<ButtonType> result = alert.showAndWait();
 
-        if (result.get() == ButtonType.OK) {
+            if (result.get() == ButtonType.OK) {
+                pastVals.clear();
+                alert = new Alert(Alert.AlertType.INFORMATION, "Past values have been cleared.");
+                alert.setHeaderText("Got it");
+                alert.showAndWait();
+
+            }
+
+        } else {
             pastVals.clear();
-            alert = new Alert(Alert.AlertType.INFORMATION, "Past values have been cleared.");
-            alert.setHeaderText("Got it");
-            alert.showAndWait();
-            historyStage.close();
 
         }
     }
 
     // Method will expand the main window to show additional options
-    public void expandOptions(Stage appStage, GridPane gridPane, Insets paddingField, int verticalGap, int horizontalGap, Slider sidesSlider, Button optionsButton, Label numFacesLabel) {
-        // Initialize labels, textfield, check boxes, buttons, grid pane
+    public void expandOptions(Stage appStage, GridPane gridPane, Insets paddingField, Slider sidesSlider, Button optionsButton, Label numFacesLabel) {
+        // Initialize labels, textfield, check boxes, buttons, slider, button grid, grid pane
         Label minLabel = new Label("Minimum Value:");
         Label maxLabel = new Label("Maximum Value:");
+        Label multiDiceInfoLabel = new Label("The results of multiple die are displayed in the \"Past Results\" window.");
 
         TextField minValField = new TextField("1");
         TextField maxValField = new TextField(Integer.toString((int) sidesSlider.getValue())); // This field is set to the slider's value
 
         CheckBox ignoreOddCheck = new CheckBox("Ignore Odd Numbers");
         CheckBox ignoreEvenCheck = new CheckBox("Ignore Even Numbers");
+        CheckBox clearPerRollCheck = new CheckBox("Clear History Per Roll");
+
+        Slider numOfDiceSlider = new Slider(sliderMin, diceSliderMax, numOfDice);
+        numOfDiceSlider.setMajorTickUnit(diceSliderMax);
+        numOfDiceSlider.setMinorTickCount(diceSliderMinorTickCount);
+        numOfDiceSlider.setShowTickMarks(true);
+        numOfDiceSlider.setShowTickLabels(true);
+        numOfDiceSlider.setShowTickLabels(true);
+        numOfDiceSlider.setSnapToTicks(true);
+        numOfDiceSlider.setBlockIncrement(1);
+        Label numDiceLabel = new Label("Number of Dice: " + (int) numOfDiceSlider.getValue());
 
         Button aboutButton = new Button("About");
         Button cancelOptionsButton = new Button("Cancel");
 
+        GridPane buttonGrid = new GridPane();
+        buttonGrid.add(aboutButton, 0, 0);
+        buttonGrid.add(cancelOptionsButton, 1, 0);
+        buttonGrid.setVgap(verticalGap);
+        buttonGrid.setHgap(horizontalGap);
+
         gridPane.add(minLabel, 0, 5);
         gridPane.add(maxLabel, 0, 6);
-        gridPane.add(aboutButton, 0, 7);
+        gridPane.add(numDiceLabel, 0, 7);
         gridPane.add(minValField, 1, 5);
         gridPane.add(maxValField, 1, 6);
+        gridPane.add(numOfDiceSlider, 1, 7);
         gridPane.add(ignoreOddCheck, 2, 5);
         gridPane.add(ignoreEvenCheck, 2, 6);
-        gridPane.add(cancelOptionsButton, 2, 7);
+        gridPane.add(clearPerRollCheck, 2, 7);
+        gridPane.add(buttonGrid, 2, 9);
+        gridPane.add(multiDiceInfoLabel, 0, 8, 3, 1);
 
         // disable old options
         sidesSlider.setDisable(true);
         optionsButton.setDisable(true);
 
         // Initialize stage
-        appStage.setHeight(appStage.getHeight() * 1.5);
+        appStage.setHeight(appStage.getHeight() * 15 / 8);
 
         // Initialize to detect errors and set difference, these should return false most of the time
         valueMinError = setValueField(minValField, maxValField, numFacesLabel);
@@ -499,9 +561,27 @@ public class Dice extends Application {
             }
         });
 
+        // if clear per roll checkbox is selected
+        clearPerRollCheck.selectedProperty().addListener(e -> {
+            if (clearPerRollCheck.isSelected()) {
+                clearPerRoll = true;
+
+            } else {
+                clearPerRoll = false;
+
+            }
+        });
+
+        // if the number of dice has been changed, update
+        numOfDiceSlider.valueProperty().addListener(e -> {
+            numOfDice = (int) numOfDiceSlider.getValue();
+            numDiceLabel.setText("Number of Dice: " + numOfDice);
+
+        });
+
         // if the about button was clicked, display the about window
         aboutButton.setOnAction(e -> {
-            showAboutWindow(paddingField, verticalGap, horizontalGap);
+            showAboutWindow(paddingField);
 
         });
 
@@ -513,15 +593,20 @@ public class Dice extends Application {
             gridPane.getChildren().remove(maxValField);
             gridPane.getChildren().remove(ignoreEvenCheck);
             gridPane.getChildren().remove(ignoreOddCheck);
-            gridPane.getChildren().remove(cancelOptionsButton);
+            gridPane.getChildren().remove(buttonGrid);
+            gridPane.getChildren().remove(numDiceLabel);
+            gridPane.getChildren().remove(numOfDiceSlider);
+            gridPane.getChildren().remove(multiDiceInfoLabel);
+            gridPane.getChildren().remove(clearPerRollCheck);
 
             sidesSlider.setDisable(false);
             optionsButton.setDisable(false);
 
             ignoreEven = false;
             ignoreOdd = false;
+            numOfDice = 1;
 
-            appStage.setHeight((appStage.getHeight() * 2) / 3);
+            appStage.setHeight(appStage.getHeight() * 8 / 15);
 
             startingVal = 1;
             numFaces = (int) sidesSlider.getValue();
@@ -560,10 +645,10 @@ public class Dice extends Application {
     }
 
     // Method will display the about window
-    public void showAboutWindow(Insets paddingField, int verticalGap, int horizontalGap) {
+    public void showAboutWindow(Insets paddingField) {
         // Initialize labels, button, grid pane, scene, and stage
         Label titleLabel = new Label("Sophisticated Dice Thing");
-        Label versionNumAndDateLabel = new Label("v1.1.1 - 5/11/2020");
+        Label versionNumAndDateLabel = new Label("v1.2.4 - 5/11/2020");
         Label copyRightLabel = new Label("Copyright 2020, Trevor Richardson, All rights reserved.");
         titleLabel.setMaxWidth(Double.MAX_VALUE);
         versionNumAndDateLabel.setMaxWidth(Double.MAX_VALUE);
@@ -650,10 +735,12 @@ public class Dice extends Application {
             if (startingVal > maxInRange) {
                 Alert alert = new Alert(Alert.AlertType.ERROR, "Custom min value is greater than max value!");
                 alert.showAndWait();
+                calculationError = true;
 
             } else {
-                Alert alert = new Alert(Alert.AlertType.ERROR, "Please check your custom values. Only whole numbers are allowed.");
+                Alert alert = new Alert(Alert.AlertType.ERROR, "Please check your custom values. Only whole numbers are allowed. Custom values must be in the range -2,147,483,648 to 2,147,483,647. The maximum possible number of faces is 2,147,483,647");
                 alert.showAndWait();
+                calculationError = true;
 
             }
         }
