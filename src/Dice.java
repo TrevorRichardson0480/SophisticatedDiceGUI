@@ -1,7 +1,7 @@
 // =================================
 // Author:         Trevor Richardson
 // Date Complete:  5/11/2020
-// Version:        1.2.4
+// Version:        1.2.5
 // =================================
 // Dice Program
 // =================================
@@ -196,7 +196,6 @@ public class Dice extends Application {
         // Initialize stage and make small adjustments
         appStage.setScene(scene);
         appStage.setTitle("Dice");
-        appStage.getIcons().add(image);
         appStage.setResizable(false);
 
         // Close loading window, open application windows
@@ -295,12 +294,13 @@ public class Dice extends Application {
             Stage historyStage = new Stage();
 
             historyStage.setScene(historyScene);
-            historyStage.setTitle("Past Values");
+            historyStage.setTitle("Past Results");
             historyStage.initModality(Modality.WINDOW_MODAL);
             historyStage.initOwner(appStage);
             historyStage.setWidth(appStage.getWidth());
             historyStage.setY(appStage.getY());
             historyStage.setX(appStage.getX());
+            historyStage.setResizable(false);
             loadingStage.close();
             historyStage.show();
 
@@ -371,6 +371,7 @@ public class Dice extends Application {
             exportStage.initOwner(historyStage);
             exportStage.setY(appStage.getY());
             exportStage.setX(appStage.getX());
+            exportStage.setResizable(false);
             loadingStage.close();
             exportStage.show();
 
@@ -648,7 +649,7 @@ public class Dice extends Application {
     public void showAboutWindow(Insets paddingField) {
         // Initialize labels, button, grid pane, scene, and stage
         Label titleLabel = new Label("Sophisticated Dice Thing");
-        Label versionNumAndDateLabel = new Label("v1.2.4 - 5/11/2020");
+        Label versionNumAndDateLabel = new Label("v1.2.5 - 5/11/2020");
         Label copyRightLabel = new Label("Copyright 2020, Trevor Richardson, All rights reserved.");
         titleLabel.setMaxWidth(Double.MAX_VALUE);
         versionNumAndDateLabel.setMaxWidth(Double.MAX_VALUE);
